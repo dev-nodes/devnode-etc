@@ -1,0 +1,145 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
+const p = require('phin');
+const { exec } = require('child_process');
+
+const pkgjson = require(path.resolve(__dirname, '../package.json'));
+const {settings} = require(path.resolve(__dirname, '../db.json'))
+const secret = settings.secret;
+const rootPath = path.resolve(__dirname, '../')
+const request = require(path.resolve(__dirname, 'request.js'))
+const reqLocal = async (route, data, method = 'get') => {
+  try {
+    let uri = `http://localhost:${process.env.PORT}/${route}`;
+    let query = {key:secret};
+    if(method === 'post') {
+        return await request.poster(uri,query,data)
+    }else {
+        if(data){
+            Object.assign(query,data)
+        }
+        return await request.getter(uri,query)
+    }
+
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+program
+  .version(pkgjson.version)
+  .description(`TRON Wallet CLI v${pkgjson.version}`);
+
+program
+  .command('getBalance')
+  .alias('getbalance')
+  .description('Get current balance of master address')
+  .action(async () => {
+    const r = await reqLocal('balance');
+    if (r.body.success) {
+      console.log(`${r.body.balance.value} ${r.body.balance.currency}`);
+    } else {
+      console.log('Internal Error');
+    }
+  });
+program
+  .command('getInfo')
+  .alias('getinfo')
+  .description('Get current balance of master address')
+  .action(async () => {
+    const r = await reqLocal('getinfo');
+    if (r.body.success) {
+      console.log(JSON.stringify(r.body.data,null,2));
+    } else {
+      console.log('Internal Error');
+    }
+  });
+program
+  .command('sweep <address>')
+  .description('Sweep balance of specific address to master')
+  .action(async (address) => {
+    const r = await reqLocal('sweep', {address});
+    if (r.body.success) {
+      console.log(JSON.stringify(r.body.data,null,2));
+    } else {
+      console.log('Internal Error');
+    }
+  });
+program
+  .command('sweepall ')
+  .description('Sweep all addresses balance to master')
+  .action(async () => {
+    const r = await reqLocal('sweepall');
+    if (r.body.success) {
+      console.log('Balances Sweeped!');
+    } else {
+      console.log('Internal Error');
+    }
+  });
+program
+  .command('validateAddress <address>')
+  .alias('validateaddress')
+  .description('Validates if an address format is correct and active')
+  .action(async address => {
+    const r = await reqLocal('validate', {address});
+    if (r.body.success) {
+      console.log('Address is valid and active');
+    } else {
+      console.log('Invalid or inactive address');
+    }
+  });
+program
+  .command('getNewAddress')
+  .alias('getnewaddress')
+  .description('Get new Tron address')
+  .action(async () => {
+    const r = await reqLocal('getnewaddress');
+    if (r.body.success) {
+      console.log(r.body.data);
+    } else {
+      console.log('Invalid or inactive address');
+    }
+  });
+  program
+  .command('getAllAddress [balance]')
+  .alias('getalladdress')
+  .description('Gets all addresses')
+  .action(async (balance = 0) => {
+    const r = await reqLocal('getalladdress',{balance});
+    if (r.body.success) {
+      let text = '';
+      for(const addr of r.body.addresses) {
+        text+=addr.address + (addr.balance ? ' - ' + addr.balance:'') + '\n';
+      }
+      console.log(text || 'All addresses are empty')
+    } else {
+      console.log('Invalid or inactive address');
+    }
+  });
+    program.command('stop')
+  .description('Gracefully stops the eos node')
+  .action(async () => {
+    exec('yarn stop', { cwd: rootPath }, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+      console.log(`stderr: ${stderr}`);
+    });
+  });
+
+if (!process.argv.slice(2).length) {
+  program.outputHelp();
+}
+
+program
+  .command('*')
+  .action(() => {
+    console.error('Invalid command: %s\nSee --help for a list of available commands.', program.args[0]);
+    process.exit(1);
+  });
+program.parse(process.argv);

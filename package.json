@@ -1,0 +1,45 @@
+{
+  "name": "@devnodes/etc",
+  "version": "1.0.0",
+  "description": "devnode etc client wallet",
+  "main": "main.js",
+  "repository": "git@github.com:dev-nodes/devnode-etc.git",
+  "author": "unibtc <unibtc@gmail.com>",
+  "license": "MIT",
+  "bin": {
+    "etc-cli": "./bin/etc-cli"
+  },
+  "scripts": {
+    "start:pm": "pm2 stop ecosystem.config.js; pm2 delete ecosystem.config.js; pm2 start ecosystem.config.js",
+    "release:git": "github-release release --user devnodes --repo etc --tag v1.0.0 --name \"v1.0.0\" --description \"etc wallet release\"",
+    "release:upload": "github-release upload --user devnodes  --repo etc --tag v1.0.0 --etc \"bitsler_trx.sh\" --file bitsler_.sh",
+    "release:now": "yarn release:git && yarn release:upload",
+    "build:release": "docker build -t unibtc/etc:latest -t unibtc/etc:1.3.2 . && git add . && git etc -m \"update\" && git push && yarn release:now && docker push unibtc/trx:latest && docker push unibtc/trx:1.3.2"
+  },
+  "dependencies": {
+    "@devnodes/etc-address": "^1.0.1",
+    "@unibtc/circularqueue": "^1.0.0",
+    "ako": "^0.1.0",
+    "big.js": "^5.2.2",
+    "boss": "^1.0.5",
+    "commander": "^6.1.0",
+    "dotenv": "^8.2.0",
+    "envalid": "^6.0.2",
+    "esm": "^3.2.25",
+    "ethereumjs-tx": "^2.1.2",
+    "ethjs": "^0.4.0",
+    "fs-extra": "^9.0.1",
+    "koa": "^2.13.0",
+    "koa-bodyparser": "^4.3.0",
+    "koa-bouncer": "^6.0.4",
+    "koa-router": "^9.4.0",
+    "level": "^6.0.1",
+    "lodash": "^4.17.20",
+    "lowdb": "^1.0.0",
+    "p-reduce": "^2.1.0",
+    "phin": "^3.5.0",
+    "queuing": "^1.3.0",
+    "winston": "^3.3.3",
+    "winston-daily-rotate-file": "^4.5.0"
+  }
+}
